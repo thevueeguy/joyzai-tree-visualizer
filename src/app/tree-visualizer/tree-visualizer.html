@@ -1,0 +1,158 @@
+<div class="flex h-screen w-full">
+  <!-- Left Side: 30% -->
+  <div class="w-[30%] border-r border-gray-300 p-6 flex flex-col">
+    <h2 class="text-2xl font-bold mb-4 text-gray-800">JOYZAI TREE VISUALIZER</h2>
+
+    <div class="flex-1 flex flex-col">
+      <label for="json-input" class="block text-sm font-medium text-gray-700 mb-2">
+        Enter JSON:
+      </label>
+      <textarea
+        id="json-input"
+        class="flex-1 w-full p-3 border border-gray-300 rounded-md font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400"
+        [value]="jsonInput()"
+        (input)="jsonInput.set($any($event.target).value)"
+        placeholder='{ "a": ["b"] }'
+        aria-label="JSON input for tree data"
+      ></textarea>
+
+      <div class="mt-4 flex gap-3">
+        <button
+          type="button"
+          class="flex-1 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all shadow-md hover:shadow-lg font-medium"
+          (click)="handleVisualize()"
+          aria-label="Visualize tree"
+        >
+          Visualize
+        </button>
+        <button
+          type="button"
+          class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all shadow-md hover:shadow-lg font-medium"
+          (click)="handleClear()"
+          aria-label="Clear input and visualization"
+        >
+          Clear
+        </button>
+      </div>
+
+      @if (errorMessage()) {
+      <div
+        class="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm"
+        role="alert"
+      >
+        {{ errorMessage() }}
+      </div>
+      }
+    </div>
+  </div>
+
+  <!-- Right Side: 70% -->
+  <div class="w-[70%] bg-gray-50 h-full overflow-auto">
+    @if (treeData().length > 0) {
+    <div class="relative" style="min-width: 100%; min-height: 100%; display: flex; align-items: center; justify-content: center">
+      <svg
+        [attr.viewBox]="getViewBox()"
+        [attr.width]="getSvgWidth()"
+        [attr.height]="getSvgHeight()"
+        class="block"
+        style="display: block"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <!-- Gradient definition for nodes -->
+        <defs>
+          <linearGradient id="nodeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color: #e5e7eb; stop-opacity: 1" />
+            <stop offset="100%" style="stop-color: #d1d5db; stop-opacity: 1" />
+          </linearGradient>
+        </defs>
+
+        <g>
+          <!-- Draw connecting lines (bottom layer) -->
+          @for (line of svgLines(); track $index) {
+          <line
+            [attr.x1]="line.x1"
+            [attr.y1]="line.y1"
+            [attr.x2]="line.x2"
+            [attr.y2]="line.y2"
+            stroke="#6b7280"
+            stroke-width="2.5"
+            opacity="0.5"
+          />
+          }
+
+          <!-- Draw nodes (middle layer) -->
+          @for (node of treeData(); track node.name) {
+          <circle
+            [@fadeIn]
+            [attr.cx]="node.x"
+            [attr.cy]="node.y"
+            r="30"
+            fill="url(#nodeGradient)"
+            stroke="#374151"
+            stroke-width="2.5"
+            class="cursor-pointer transition-all hover:opacity-90"
+            style="filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))"
+          />
+          }
+
+          <!-- Draw node labels (below circles) -->
+          @for (node of treeData(); track node.name) {
+          <foreignObject
+            [attr.x]="node.x - 60"
+            [attr.y]="node.y + 35"
+            [attr.width]="120"
+            [attr.height]="24"
+            style="pointer-events: all"
+          >
+            <div
+              class="text-xs font-semibold text-gray-800 text-center truncate cursor-pointer bg-white px-2 py-1 rounded-md border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all"
+              (mouseenter)="handleLabelMouseEnter($event, node.name)"
+              (mouseleave)="handleLabelMouseLeave()"
+              (mousemove)="handleLabelMouseMove($event)"
+              style="
+                width: 120px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                line-height: 1.2;
+                display: block;
+              "
+            >
+              {{ node.name }}
+            </div>
+          </foreignObject>
+          }
+        </g>
+      </svg>
+
+      <!-- Tooltip -->
+      @if (tooltipVisible()) {
+      <div
+        class="fixed z-50 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-xl pointer-events-none border border-gray-700"
+        [style.left.px]="tooltipX()"
+        [style.top.px]="tooltipY()"
+        style="transform: translateX(-50%) translateY(-100%); margin-top: -8px"
+      >
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          {{ tooltipText() }}
+        </div>
+        <div
+          class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"
+        ></div>
+      </div>
+      }
+    </div>
+    } @else {
+    <div class="flex items-center justify-center h-full text-gray-500">
+      <p class="text-lg">Enter JSON and click "Visualize" to visualize the tree</p>
+    </div>
+    }
+  </div>
+</div>
