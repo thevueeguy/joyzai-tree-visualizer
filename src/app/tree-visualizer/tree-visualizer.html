@@ -55,7 +55,7 @@
         <li>
           <button
             type="button"
-            class="px-6 py-3 font-medium transition-colors"
+            class="px-6 py-3 font-medium transition-colors cursor-pointer"
             [class.bg-gray-50]="activeTab() === 'visualize'"
             [class.text-gray-800]="activeTab() === 'visualize'"
             [class.text-gray-600]="activeTab() !== 'visualize'"
@@ -63,13 +63,13 @@
             [class.border-gray-800]="activeTab() === 'visualize'"
             (click)="setActiveTab('visualize')"
           >
-            Tree Visualize
+            Tree
           </button>
         </li>
         <li>
           <button
             type="button"
-            class="px-6 py-3 font-medium transition-colors"
+            class="px-6 py-3 font-medium transition-colors cursor-pointer"
             [class.bg-gray-50]="activeTab() === 'text'"
             [class.text-gray-800]="activeTab() === 'text'"
             [class.text-gray-600]="activeTab() !== 'text'"
