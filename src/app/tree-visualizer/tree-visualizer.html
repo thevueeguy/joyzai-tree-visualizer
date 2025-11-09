@@ -47,9 +47,46 @@
   </div>
 
   <!-- Right Side: 70% -->
-  <div class="w-[70%] bg-gray-50 h-full overflow-auto">
+  <div class="w-[70%] bg-gray-50 h-full flex flex-col">
     @if (treeData().length > 0) {
-    <div class="relative" style="min-width: 100%; min-height: 100%; display: flex; align-items: center; justify-content: center">
+    <!-- Tabs -->
+    <div class="border-b border-gray-300 bg-white">
+      <ul class="flex">
+        <li>
+          <button
+            type="button"
+            class="px-6 py-3 font-medium transition-colors"
+            [class.bg-gray-50]="activeTab() === 'visualize'"
+            [class.text-gray-800]="activeTab() === 'visualize'"
+            [class.text-gray-600]="activeTab() !== 'visualize'"
+            [class.border-b-2]="activeTab() === 'visualize'"
+            [class.border-gray-800]="activeTab() === 'visualize'"
+            (click)="setActiveTab('visualize')"
+          >
+            Tree Visualize
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            class="px-6 py-3 font-medium transition-colors"
+            [class.bg-gray-50]="activeTab() === 'text'"
+            [class.text-gray-800]="activeTab() === 'text'"
+            [class.text-gray-600]="activeTab() !== 'text'"
+            [class.border-b-2]="activeTab() === 'text'"
+            [class.border-gray-800]="activeTab() === 'text'"
+            (click)="setActiveTab('text')"
+          >
+            Text
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="flex-1 overflow-auto">
+      @if (activeTab() === 'visualize') {
+      <div class="relative p-6" style="min-width: 100%; min-height: 100%; display: flex; align-items: center; justify-content: center">
       <svg
         [attr.viewBox]="getViewBox()"
         [attr.width]="getSvgWidth()"
@@ -146,6 +183,15 @@
         <div
           class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"
         ></div>
+      </div>
+      }
+      </div>
+      } @else if (activeTab() === 'text') {
+      <!-- Text View -->
+      <div class="p-6">
+        <div class="bg-white rounded-lg border border-gray-300 p-6 overflow-auto">
+          <div [innerHTML]="generateTextView()" class="text-view"></div>
+        </div>
       </div>
       }
     </div>

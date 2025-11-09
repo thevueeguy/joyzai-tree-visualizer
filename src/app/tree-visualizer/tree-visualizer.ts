@@ -32,12 +32,16 @@ export class TreeVisualizerComponent {
   protected readonly errorMessage = signal<string>('');
   protected readonly treeData = signal<TreeNode[]>([]);
   protected readonly svgLines = signal<Array<{ x1: number; y1: number; x2: number; y2: number }>>([]);
+  protected readonly treeStructure = signal<TreeNode[]>([]); // Store tree structure for text view
   
   // Tooltip state
   protected readonly tooltipVisible = signal<boolean>(false);
   protected readonly tooltipText = signal<string>('');
   protected readonly tooltipX = signal<number>(0);
   protected readonly tooltipY = signal<number>(0);
+
+  // Tab state
+  protected readonly activeTab = signal<'visualize' | 'text'>('visualize');
 
   private readonly NODE_RADIUS = 30;
   private readonly HORIZONTAL_SPACING = 180;
@@ -108,9 +112,42 @@ export class TreeVisualizerComponent {
     }
   };
 
+  // Tab controls
+  protected setActiveTab = (tab: 'visualize' | 'text'): void => {
+    this.activeTab.set(tab);
+  };
+
+  // Generate text view HTML
+  protected generateTextView = (): string => {
+    const structure = this.treeStructure();
+    if (structure.length === 0) {
+      return '';
+    }
+
+    const generateList = (nodes: TreeNode[], indentLevel: number = 0): string => {
+      if (nodes.length === 0) {
+        return '';
+      }
+
+      let html = '<ul>';
+      nodes.forEach(node => {
+        html += `<li class="pl-6">- ${node.name}`;
+        if (node.children.length > 0) {
+          html += generateList(node.children, indentLevel + 1);
+        }
+        html += '</li>';
+      });
+      html += '</ul>';
+      return html;
+    };
+
+    return generateList(structure);
+  };
+
   private clearTree = (): void => {
     this.treeData.set([]);
     this.svgLines.set([]);
+    this.treeStructure.set([]);
     this.svgWidth.set(800);
     this.svgHeight.set(600);
     this.svgOffsetX.set(0);
@@ -168,6 +205,28 @@ export class TreeVisualizerComponent {
     };
 
     rootNodes.forEach(rootName => buildTreeStructure(rootName, 0));
+
+    // Store tree structure for text view (before positioning)
+    const treeStructureCopy: TreeNode[] = [];
+    const copyTree = (node: TreeNode): TreeNode => {
+      const copy: TreeNode = {
+        name: node.name,
+        children: [],
+        x: 0,
+        y: 0,
+        level: node.level
+      };
+      node.children.forEach(child => {
+        copy.children.push(copyTree(child));
+      });
+      return copy;
+    };
+    nodes.forEach(node => {
+      if (node.level === 0) {
+        treeStructureCopy.push(copyTree(node));
+      }
+    });
+    this.treeStructure.set(treeStructureCopy);
 
     // Calculate positions
     const positionNodes = (node: TreeNode, startX: number, startY: number): number => {
